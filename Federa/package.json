@@ -1,0 +1,49 @@
+{
+  "name": "federa",
+  "version": "1.0.0",
+  "description": "Federa - A Decentralized Federated Learning Incentive Protocol",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/deploy.js --network localhost",
+    "node": "npx hardhat node",
+    "frontend": "node frontend/server.js",
+    "dev": "concurrently \"npx hardhat node\" \"node frontend/server.js\"",
+    "clean": "rm -rf artifacts cache",
+    "slither": "slither ."
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "smart-contracts",
+    "solidity",
+    "federated-learning",
+    "decentralized",
+    "machine-learning"
+  ],
+  "author": "Federa Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@nomicfoundation/hardhat-verify": "^1.1.1",
+    "@typechain/ethers-v5": "^10.2.1",
+    "@typechain/hardhat": "^6.1.5",
+    "chai": "^4.3.7",
+    "ethers": "^5.7.2",
+    "hardhat": "^2.13.0",
+    "hardhat-gas-reporter": "^1.0.9",
+    "solidity-coverage": "^0.8.1",
+    "typechain": "^8.1.1",
+    "@openzeppelin/contracts": "^4.8.1",
+    "@openzeppelin/contracts-upgradeable": "^4.8.1",
+    "@risczero/cairo": "^0.2.0",
+    "@risczero/risc0-js": "^0.2.0",
+    "concurrently": "^7.6.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
