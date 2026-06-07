@@ -1,509 +1,493 @@
-// Federa前端应用逻辑
+// Federa Frontend Logic - High-End Optimized
 document.addEventListener('DOMContentLoaded', () => {
-    // 导航逻辑
+    // === 1. Navigation Logic ===
     const navLinks = document.querySelectorAll('.nav-link');
-    const sections = document.querySelectorAll('section');
+    const sections = document.querySelectorAll('.section');
 
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            
-            // 移除所有链接和区域的活动状态
             navLinks.forEach(l => l.classList.remove('active'));
-            sections.forEach(s => {
-                s.classList.add('hidden');
-                s.classList.remove('active');
-            });
+            sections.forEach(s => s.classList.add('hidden'));
             
-            // 为点击的链接和目标区域添加活动状态
             link.classList.add('active');
             const targetId = link.getAttribute('data-target');
             const targetSection = document.getElementById(targetId);
             if (targetSection) {
                 targetSection.classList.remove('hidden');
-                targetSection.classList.add('active');
             }
         });
     });
 
-    // 钱包连接功能
+    // === 2. Global Toast Notifications ===
+    window.showToast = function(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        };
+        toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('closing');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    };
+
+    // === 3. Wallet Connection ===
     const connectWalletBtn = document.getElementById('connect-wallet');
     const walletStatus = document.getElementById('wallet-status');
     const accountShort = document.getElementById('account-short');
-    const balance = document.getElementById('balance');
+    const balanceText = document.getElementById('balance');
     const disconnectWalletBtn = document.getElementById('disconnect-wallet');
 
-    connectWalletBtn.addEventListener('click', async () => {
-        try {
-            // 检查MetaMask是否存在
-            if (typeof window.ethereum !== 'undefined') {
-                // 请求账户权限
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const account = accounts[0];
-                
-                // 获取账户余额
-                const balanceWei = await window.ethereum.request({
-                    method: 'eth_getBalance',
-                    params: [account, 'latest']
-                });
-                
-                // 使用 ethers.js 工具转换余额，如果没有则手动转换
-                let balanceEth;
-                if (typeof window.ethers !== 'undefined' && window.ethers.utils) {
-                    balanceEth = parseFloat(window.ethers.utils.formatEther(balanceWei)).toFixed(4);
-                } else {
-                    // 手动转换 wei 到 ether (除以 10^18)
-                    const balanceBigNumber = BigInt(balanceWei);
-                    const balanceString = balanceBigNumber.toString();
-                    // 在字符串中插入小数点（从右边数18位）
-                    let paddedBalance = balanceString.padStart(18, '0');
-                    const integerPart = paddedBalance.slice(0, Math.max(0, paddedBalance.length - 18)) || '0';
-                    const decimalPart = paddedBalance.slice(Math.max(0, paddedBalance.length - 18)).replace(/0+$/, '') || '0';
-                    balanceEth = integerPart + '.' + decimalPart;
-                    if (balanceEth.startsWith('.')) balanceEth = '0' + balanceEth;
-                    balanceEth = parseFloat(balanceEth).toFixed(4);
-                }
-                
-                // 更新UI
-                connectWalletBtn.classList.add('hidden');
-                walletStatus.classList.remove('hidden');
-                
-                accountShort.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
-                balance.textContent = `${balanceEth} ETH`;
-                
-                // 添加活动日志
-                addActivity('钱包已连接', '刚刚');
-                
-                console.log('钱包连接成功:', account);
-            } else {
-                alert('请安装MetaMask钱包插件');
-            }
-        } catch (error) {
-            console.error('钱包连接失败:', error);
-            alert('钱包连接失败: ' + error.message);
-        }
-    });
+    window.currentAccount = null; // 暴露给其他脚本
 
-    // 断开钱包连接功能
-    if (disconnectWalletBtn) {
-        disconnectWalletBtn.addEventListener('click', () => {
-            connectWalletBtn.classList.remove('hidden');
-            walletStatus.classList.add('hidden');
-            
-            // 添加活动日志
-            addActivity('钱包已断开连接', '刚刚');
+    if (connectWalletBtn) {
+        connectWalletBtn.addEventListener('click', async () => {
+            if (typeof ethers === 'undefined') {
+                showToast('Ethers.js library not loaded', 'error');
+                return;
+            }
+
+            if (window.ethereum) {
+                try {
+                    connectWalletBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+                    connectWalletBtn.disabled = true;
+
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    window.currentAccount = accounts[0];
+                    
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    const balanceWei = await provider.getBalance(window.currentAccount);
+                    const balanceEth = parseFloat(ethers.utils.formatEther(balanceWei)).toFixed(4);
+                    
+                    connectWalletBtn.classList.add('hidden');
+                    walletStatus.classList.remove('hidden');
+                    
+                    accountShort.textContent = `${window.currentAccount.substring(0, 6)}...${window.currentAccount.slice(-4)}`;
+                    balanceText.textContent = `${balanceEth} ETH`;
+                    
+                    addActivity('Wallet connected successfully', 'Just now');
+                    showToast('Wallet connected', 'success');
+
+                    // 检查是否为聚合节点（示例地址）
+                    const aggregatorDemoAddress = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8';
+                    const aggregatorPanel = document.getElementById('aggregator-panel');
+                    if (aggregatorPanel && window.currentAccount.toLowerCase() === aggregatorDemoAddress.toLowerCase()) {
+                        aggregatorPanel.classList.remove('hidden');
+                        showToast('检测到聚合节点角色，聚合面板已解锁', 'info');
+                    }
+                } catch (error) {
+                    showToast('Connection failed', 'error');
+                } finally {
+                    connectWalletBtn.disabled = false;
+                    connectWalletBtn.innerHTML = '<i class="fas fa-wallet"></i> Connect Wallet';
+                }
+            } else {
+                showToast('Please install MetaMask', 'warning');
+            }
         });
     }
 
-    // 表单切换功能
-    setupFormToggle('register-node-btn', 'node-reg-form');
-    setupFormToggle('create-task-btn', 'task-create-form');
-    setupFormToggle('mint-nft-btn', 'nft-create-form');
-    setupFormToggle('register-dataset-btn', 'dataset-reg-form');
+    if (disconnectWalletBtn) {
+        disconnectWalletBtn.addEventListener('click', () => {
+            window.currentAccount = null;
+            connectWalletBtn.classList.remove('hidden');
+            walletStatus.classList.add('hidden');
+            addActivity('Wallet disconnected', 'Just now');
+            showToast('Wallet disconnected', 'info');
+            const aggregatorPanel = document.getElementById('aggregator-panel');
+            if (aggregatorPanel) aggregatorPanel.classList.add('hidden');
+        });
+    }
 
-    function setupFormToggle(btnId, formId) {
+    // === 4. Form Toggles ===
+    function setupToggle(btnId, formId) {
         const btn = document.getElementById(btnId);
         const form = document.getElementById(formId);
         if (btn && form) {
-            btn.addEventListener('click', () => {
-                form.classList.toggle('hidden');
-            });
+            btn.addEventListener('click', () => form.classList.toggle('hidden'));
         }
     }
+    setupToggle('register-node-btn', 'node-reg-form');
+    setupToggle('create-task-btn', 'task-create-form');
+    setupToggle('mint-nft-btn', 'nft-create-form');
+    setupToggle('register-dataset-btn', 'dataset-reg-form');
 
-    // 初始化图表
-    initCharts();
-
+    // === 5. Chart Initialization ===
     function initCharts() {
-        // 检查Chart.js是否已加载
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js未加载');
-            return;
-        }
-
-        // 节点分布图表
-        const nodeCtx = document.getElementById('nodeChart');
-        if (nodeCtx) {
-            new Chart(nodeCtx.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['训练节点', '聚合节点', '数据提供者'],
-                    datasets: [{
-                        data: [12, 5, 8],
-                        backgroundColor: ['#4f46e5', '#10b981', '#f59e0b'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-        }
-
-        // 任务状态图表
-        const taskCtx = document.getElementById('taskChart');
-        if (taskCtx) {
-            new Chart(taskCtx.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: ['待开始', '进行中', '已完成', '失败'],
-                    datasets: [{
-                        label: '任务数量',
-                        data: [5, 12, 28, 3],
-                        backgroundColor: '#818cf8',
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                display: false
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // 活动趋势图表
+        if (typeof Chart === 'undefined') return;
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 } } }
+            },
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
+                x: { grid: { display: false }, ticks: { color: '#64748b' } }
+            }
+        };
         const activityCtx = document.getElementById('activityChart');
         if (activityCtx) {
-            new Chart(activityCtx.getContext('2d'), {
+            new Chart(activityCtx, {
                 type: 'line',
-                data: {
-                    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-                    datasets: [{
-                        label: '活跃节点',
-                        data: [65, 59, 80, 81, 56, 95, 110],
-                        borderColor: '#4f46e5',
-                        tension: 0.4,
-                        fill: true,
-                        backgroundColor: 'rgba(79, 70, 229, 0.1)'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: '#f3f4f6'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
+                data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'], datasets: [{ label: 'Average Shapley Value', data: [0.12, 0.19, 0.15, 0.25, 0.22, 0.31, 0.28], borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.4 }] },
+                options: commonOptions
             });
         }
-
-        // 信誉分分布图表
+        const nodeCtx = document.getElementById('nodeChart');
+        if (nodeCtx) {
+            new Chart(nodeCtx, { type: 'doughnut', data: { labels: ['Trainer', 'Aggregator', 'Data Provider'], datasets: [{ data: [65, 15, 20], backgroundColor: ['#6366f1', '#a855f7', '#3b82f6'], borderWidth: 0, hoverOffset: 10 }] }, options: { ...commonOptions, cutout: '70%' } });
+        }
+        const taskCtx = document.getElementById('taskChart');
+        if (taskCtx) {
+            new Chart(taskCtx, { type: 'bar', data: { labels: ['Pending', 'Training', 'Completed', 'Failed'], datasets: [{ label: 'Tasks', data: [12, 24, 45, 3], backgroundColor: '#6366f1', borderRadius: 6 }] }, options: commonOptions });
+        }
         const repCtx = document.getElementById('reputationChart');
         if (repCtx) {
-            new Chart(repCtx.getContext('2d'), {
-                type: 'pie',
-                data: {
-                    labels: ['高信誉 (>80)', '中信誉 (50-80)', '低信誉 (<50)'],
-                    datasets: [{
-                        data: [45, 30, 25],
-                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
+            new Chart(repCtx, { type: 'pie', data: { labels: ['High', 'Medium', 'Low'], datasets: [{ data: [70, 20, 10], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderWidth: 0 }] }, options: commonOptions });
         }
     }
+    setTimeout(initCharts, 500);
 
-    // 添加活动日志
-    function addActivity(text, time) {
+    // === 6. Activity Logger ===
+    window.addActivity = function(text, time) {
         const feed = document.getElementById('activity-feed');
         if (feed) {
             const item = document.createElement('div');
             item.className = 'activity-item';
-            item.innerHTML = `
-                <div class="activity-icon">
-                    <i class="fas fa-info-circle"></i>
-                </div>
-                <div class="activity-content">
-                    <p>${text}</p>
-                    <small>${time}</small>
-                </div>
-            `;
+            item.innerHTML = `<div class="activity-icon"><i class="fas fa-circle-info"></i></div><div class="activity-content"><p style="font-weight: 600;">${text}</p><small style="color: var(--text-muted);">${time}</small></div>`;
             feed.prepend(item);
         }
+    };
+
+    // === 7. 模拟链上交易（挂载到 window，供 training.js 调用）===
+    window.simulateTransaction = async function(actionName, params = {}) {
+        if (!window.currentAccount) {
+            showToast('Please connect wallet first', 'warning');
+            throw new Error('Wallet not connected');
+        }
+        const txHash = '0x' + Math.random().toString(36).substring(2, 15);
+        showToast(`${actionName} 交易已发送: ${txHash.substring(0, 10)}...`, 'info');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        showToast(`${actionName} 交易已确认`, 'success');
+        return txHash;
+    };
+
+    // === 8. 动态添加卡片函数 ===
+    function addNodeCard(role, stake, address = '0x'+Math.random().toString(36).substring(2,10)) {
+        const container = document.getElementById('nodes-list');
+        if (!container) return;
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div class="stat-icon" style="margin-bottom: 0;"><i class="fas fa-microchip"></i></div>
+                <span class="badge" style="background: var(--success); color: #fff; font-size: 0.7rem; padding: 4px 8px; border-radius: 6px;">ACTIVE</span>
+            </div>
+            <h4 style="font-size: 1.2rem; margin-bottom: 0.5rem;">${escapeHtml(role)}</h4>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">ID: ${address.substring(0,6)}...${address.slice(-4)}</p>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+                <div><small style="display: block; color: var(--text-muted);">信誉评分</small><strong style="color: var(--accent-primary);">100 / 100</strong></div>
+                <div><small style="display: block; color: var(--text-muted);">质押金额</small><strong>${stake} FED</strong></div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary btn-sm node-detail-btn" style="flex: 1;">详情</button>
+                <button class="btn btn-secondary btn-sm node-withdraw-btn" style="flex: 1;">提取收益</button>
+            </div>
+        `;
+        container.prepend(card);
+        // 绑定详情和提取收益按钮事件
+        card.querySelector('.node-detail-btn').addEventListener('click', () => {
+            showToast(`节点详情: ${role}，信誉100，质押${stake} FED`, 'info');
+        });
+        card.querySelector('.node-withdraw-btn').addEventListener('click', async () => {
+            if (!window.currentAccount) return showToast('请先连接钱包', 'warning');
+            showToast(`正在提取收益...`, 'info');
+            await new Promise(r => setTimeout(r, 1000));
+            showToast(`已提取 50 FED 收益`, 'success');
+            addActivity(`从 ${role} 提取收益 50 FED`, 'Just now');
+        });
     }
 
-    // 智能合约交互功能
-    setupContractInteractions();
-
-    function setupContractInteractions() {
-        // 节点注册功能
-        const submitNodeRegBtn = document.getElementById('submit-node-reg');
-        if (submitNodeRegBtn) {
-            submitNodeRegBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                const nodeType = document.getElementById('node-type').value;
-                const nodeStake = parseFloat(document.getElementById('node-stake').value);
-                
-                if (!nodeStake || nodeStake <= 0) {
-                    alert('请输入有效的质押金额');
-                    return;
-                }
-                
-                try {
-                    // 显示加载状态
-                    const originalText = submitNodeRegBtn.textContent;
-                    submitNodeRegBtn.disabled = true;
-                    submitNodeRegBtn.textContent = '处理中...';
-                    
-                    // 模拟合约调用
-                    await simulateContractCall('registerNode', { nodeType, stake: nodeStake });
-                    
-                    // 添加活动日志
-                    addActivity(`${nodeType}节点注册成功`, '刚刚');
-                    
-                    // 隐藏表单
-                    document.getElementById('node-reg-form').classList.add('hidden');
-                    
-                    alert(`成功注册${nodeType}节点！质押金额：${nodeStake} FED`);
-                    
-                    // 恢复按钮状态
-                    submitNodeRegBtn.disabled = false;
-                    submitNodeRegBtn.textContent = originalText;
-                } catch (error) {
-                    console.error('节点注册失败:', error);
-                    alert('节点注册失败: ' + error.message);
-                    submitNodeRegBtn.disabled = false;
-                    submitNodeRegBtn.textContent = '注册节点';
-                }
-            });
-        }
-
-        // 任务创建功能
-        const submitTaskCreateBtn = document.getElementById('submit-task-create');
-        if (submitTaskCreateBtn) {
-            submitTaskCreateBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                const taskName = document.getElementById('task-name').value;
-                const taskReward = parseFloat(document.getElementById('task-reward').value);
-                const taskRounds = parseInt(document.getElementById('task-rounds').value);
-                const taskDescription = document.getElementById('task-description').value;
-                
-                if (!taskName) {
-                    alert('请输入任务名称');
-                    return;
-                }
-                
-                if (!taskReward || taskReward <= 0) {
-                    alert('请输入有效的奖励池金额');
-                    return;
-                }
-                
-                if (!taskRounds || taskRounds <= 0) {
-                    alert('请输入有效的训练轮次');
-                    return;
-                }
-                
-                try {
-                    // 显示加载状态
-                    const originalText = submitTaskCreateBtn.textContent;
-                    submitTaskCreateBtn.disabled = true;
-                    submitTaskCreateBtn.textContent = '创建中...';
-                    
-                    // 模拟合约调用
-                    await simulateContractCall('createTask', { 
-                        name: taskName, 
-                        reward: taskReward,
-                        rounds: taskRounds,
-                        description: taskDescription
-                    });
-                    
-                    // 添加活动日志
-                    addActivity(`任务"${taskName}"创建成功`, '刚刚');
-                    
-                    // 隐藏表单
-                    document.getElementById('task-create-form').classList.add('hidden');
-                    
-                    alert(`成功创建任务"${taskName}"！奖励池：${taskReward} FED，轮次：${taskRounds}`);
-                    
-                    // 恢复按钮状态
-                    submitTaskCreateBtn.disabled = false;
-                    submitTaskCreateBtn.textContent = originalText;
-                } catch (error) {
-                    console.error('任务创建失败:', error);
-                    alert('任务创建失败: ' + error.message);
-                    submitTaskCreateBtn.disabled = false;
-                    submitTaskCreateBtn.textContent = '创建任务';
-                }
-            });
-        }
-
-        // NFT铸造功能
-        const submitNftMintBtn = document.getElementById('submit-nft-mint');
-        if (submitNftMintBtn) {
-            submitNftMintBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                const nftName = document.getElementById('nft-name').value;
-                const nftDescription = document.getElementById('nft-description').value;
-                const nftModelUri = document.getElementById('nft-model-uri').value;
-                const nftPerformance = document.getElementById('nft-performance').value;
-                
-                if (!nftName) {
-                    alert('请输入NFT名称');
-                    return;
-                }
-                
-                try {
-                    // 显示加载状态
-                    const originalText = submitNftMintBtn.textContent;
-                    submitNftMintBtn.disabled = true;
-                    submitNftMintBtn.textContent = '铸造中...';
-                    
-                    // 模拟合约调用
-                    await simulateContractCall('mintModelNFT', { 
-                        name: nftName, 
-                        description: nftDescription,
-                        modelUri: nftModelUri,
-                        performance: nftPerformance
-                    });
-                    
-                    // 添加活动日志
-                    addActivity(`模型NFT"${nftName}"铸造成功`, '刚刚');
-                    
-                    // 隐藏表单
-                    document.getElementById('nft-create-form').classList.add('hidden');
-                    
-                    alert(`成功铸造NFT"${nftName}"！`);
-                    
-                    // 恢复按钮状态
-                    submitNftMintBtn.disabled = false;
-                    submitNftMintBtn.textContent = originalText;
-                } catch (error) {
-                    console.error('NFT铸造失败:', error);
-                    alert('NFT铸造失败: ' + error.message);
-                    submitNftMintBtn.disabled = false;
-                    submitNftMintBtn.textContent = '铸造NFT';
-                }
-            });
-        }
-
-        // 数据集注册功能
-        const submitDatasetRegBtn = document.getElementById('submit-dataset-reg');
-        if (submitDatasetRegBtn) {
-            submitDatasetRegBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                const datasetName = document.getElementById('dataset-name').value;
-                const datasetDescription = document.getElementById('dataset-description').value;
-                const datasetSize = document.getElementById('dataset-size').value;
-                const datasetFormat = document.getElementById('dataset-format').value;
-                
-                if (!datasetName) {
-                    alert('请输入数据集名称');
-                    return;
-                }
-                
-                try {
-                    // 显示加载状态
-                    const originalText = submitDatasetRegBtn.textContent;
-                    submitDatasetRegBtn.disabled = true;
-                    submitDatasetRegBtn.textContent = '注册中...';
-                    
-                    // 模拟合约调用
-                    await simulateContractCall('registerDataset', { 
-                        name: datasetName, 
-                        description: datasetDescription,
-                        size: datasetSize,
-                        format: datasetFormat
-                    });
-                    
-                    // 添加活动日志
-                    addActivity(`数据集"${datasetName}"注册成功`, '刚刚');
-                    
-                    // 隐藏表单
-                    document.getElementById('dataset-reg-form').classList.add('hidden');
-                    
-                    alert(`成功注册数据集"${datasetName}"！`);
-                    
-                    // 恢复按钮状态
-                    submitDatasetRegBtn.disabled = false;
-                    submitDatasetRegBtn.textContent = originalText;
-                } catch (error) {
-                    console.error('数据集注册失败:', error);
-                    alert('数据集注册失败: ' + error.message);
-                    submitDatasetRegBtn.disabled = false;
-                    submitDatasetRegBtn.textContent = '注册数据集';
-                }
-            });
-        }
+    function addTaskCard(name, reward, rounds) {
+        const container = document.getElementById('tasks-list');
+        if (!container) return;
+        const taskId = Date.now().toString().slice(-8);
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.setAttribute('data-task-id', taskId);
+        card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: var(--accent-primary); padding: 5px 10px; border-radius: 8px;">新任务</span>
+                <span style="color: var(--text-muted); font-size: 0.8rem;">#${taskId}</span>
+            </div>
+            <h4 style="font-size: 1.25rem; margin-bottom: 0.75rem;">${escapeHtml(name)}</h4>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">基于 Federa 协议的零知识联邦训练任务。</p>
+            <div style="background: var(--bg-surface); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><small>训练进度</small><small class="task-progress-text">0 / ${rounds} 轮</small></div>
+                <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px;">
+                    <div class="task-progress-bar" style="width: 0%; height: 100%; background: var(--accent-primary); border-radius: 3px;"></div>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div><small style="display: block; color: var(--text-muted);">奖池总额</small><strong style="font-size: 1.1rem; color: var(--success);">${reward} FED</strong></div>
+                <button class="btn btn-primary btn-sm join-task-btn" data-task-name="${escapeHtml(name)}">参与训练</button>
+            </div>
+        `;
+        container.prepend(card);
+        card.querySelector('.join-task-btn').addEventListener('click', () => {
+            if (!window.currentAccount) return showToast('请先连接钱包', 'warning');
+            showToast(`已加入任务 ${name}，请前往训练工作台`, 'success');
+            addActivity(`参与任务 ${name}`, 'Just now');
+            document.querySelector('.nav-link[data-target="training"]').click();
+        });
+        // 存储任务信息以便后续更新进度（可选）
+        if (!window.tasksProgress) window.tasksProgress = {};
+        window.tasksProgress[taskId] = { current: 0, total: parseInt(rounds), name: name };
     }
 
-    // 模拟合约调用
-    async function simulateContractCall(method, params) {
-        // 模拟网络延迟
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // 模拟合约交互
-        console.log(`调用合约方法: ${method}`, params);
-        
-        // 模拟成功响应
-        return { success: true, txHash: `0x${Math.random().toString(16).substr(2, 64)}` };
+    function addNFTCard(name) {
+        const container = document.getElementById('nfts-list');
+        if (!container) return;
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.style.padding = '0';
+        card.style.overflow = 'hidden';
+        card.innerHTML = `
+            <div style="height: 200px; background: linear-gradient(45deg, #1e1e26, #2d2d3a); display: flex; align-items: center; justify-content: center; position: relative;">
+                <i class="fas fa-cube" style="font-size: 5rem; color: var(--accent-secondary); opacity: 0.5;"></i>
+                <div style="position: absolute; bottom: 1rem; left: 1rem; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 6px; backdrop-filter: blur(4px);"><small>新铸造</small></div>
+            </div>
+            <div style="padding: 1.5rem;">
+                <h4 style="font-size: 1.2rem; margin-bottom: 0.5rem;">${escapeHtml(name)}</h4>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">准确率: 待验证</span>
+                    <span style="color: var(--success); font-weight: 700;">-- ETH</span>
+                </div>
+                <hr style="border: 0; border-top: 1px solid var(--divider); margin-bottom: 1rem;">
+                <button class="btn btn-secondary btn-sm download-model-btn" style="width: 100%;">下载模型权重 (IPFS)</button>
+            </div>
+        `;
+        container.prepend(card);
+        card.querySelector('.download-model-btn').addEventListener('click', () => {
+            showToast(`正在从 IPFS 下载 ${name} 权重...`, 'info');
+            setTimeout(() => {
+                showToast(`下载链接: ipfs://QmExample/${name.replace(/\s/g, '_')}.bin (模拟)`, 'success');
+                addActivity(`下载模型 ${name}`, 'Just now');
+            }, 1000);
+        });
     }
 
-    // 更新仪表板统计
-    function updateDashboardStats() {
-        // 模拟从合约获取统计数据
-        const totalNodesElement = document.getElementById('total-nodes');
-        const totalTasksElement = document.getElementById('total-tasks');
-        const totalNftsElement = document.getElementById('total-nfts');
-        const totalDatasetsElement = document.getElementById('total-datasets');
-        
-        if (totalNodesElement) totalNodesElement.textContent = '25';
-        if (totalTasksElement) totalTasksElement.textContent = '17';
-        if (totalNftsElement) totalNftsElement.textContent = '8';
-        if (totalDatasetsElement) totalDatasetsElement.textContent = '12';
+    function addDatasetCard(name) {
+        const container = document.getElementById('datasets-list');
+        if (!container) return;
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 1.5rem;">
+                <div class="stat-icon" style="margin-bottom: 0; background: rgba(59, 130, 246, 0.1); color: var(--info);"><i class="fas fa-database"></i></div>
+                <div><h4 style="font-size: 1.1rem;">${escapeHtml(name)}</h4><small style="color: var(--text-muted);">分类: 自定义数据集</small></div>
+            </div>
+            <div style="background: var(--bg-surface); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><small style="color: var(--text-muted);">访问策略</small><span class="badge" style="background: rgba(59, 130, 246, 0.2); color: var(--info);">需授权</span></div>
+                <div style="display: flex; justify-content: space-between;"><small style="color: var(--text-muted);">数据条数</small><strong>待定</strong></div>
+            </div>
+            <button class="btn btn-primary btn-sm request-access-btn" style="width: 100%;">申请访问权限</button>
+        `;
+        container.prepend(card);
+        card.querySelector('.request-access-btn').addEventListener('click', () => {
+            if (!window.currentAccount) return showToast('请先连接钱包', 'warning');
+            showToast('访问申请已提交，等待数据提供者审批（链上事件）', 'info');
+            addActivity(`申请数据集 ${name} 访问权限`, 'Just now');
+            // 模拟后续：2秒后提示审批通过
+            setTimeout(() => {
+                showToast(`数据提供者已批准您访问 ${name}，访问密钥已发放`, 'success');
+                addActivity(`数据集 ${name} 访问权限已批准`, 'Just now');
+            }, 4000);
+        });
     }
 
-    // 初始化时更新统计数据
-    updateDashboardStats();
-    
-    // 定期更新统计数据
-    setInterval(updateDashboardStats, 30000); // 每30秒更新一次
-    
-    // 初始化Ethers.js（如果未定义）
-    if (typeof window.ethers === 'undefined') {
-        console.warn('Ethers.js未加载，请检查CDN链接');
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // === 9. 表单提交逻辑（带动态添加卡片） ===
+    // 注册节点
+    const submitNodeBtn = document.getElementById('submit-node');
+    if (submitNodeBtn) {
+        submitNodeBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!window.currentAccount) return showToast('请先连接钱包', 'warning');
+            const roleSelect = document.getElementById('node-role');
+            const role = roleSelect.options[roleSelect.selectedIndex].text;
+            const stake = document.getElementById('stake-amount').value;
+            if (!stake || stake < 200) {
+                showToast('质押金额不能小于 200 FED', 'error');
+                return;
+            }
+            submitNodeBtn.disabled = true;
+            submitNodeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 提交中...';
+            try {
+                await window.simulateTransaction(`注册节点 - ${role}，质押 ${stake} FED`);
+                addActivity(`节点注册成功: ${role}`, 'Just now');
+                addNodeCard(role, stake, window.currentAccount);
+                document.getElementById('node-reg-form').classList.add('hidden');
+                showToast('节点已添加到列表', 'success');
+            } catch (err) {}
+            finally {
+                submitNodeBtn.disabled = false;
+                submitNodeBtn.innerHTML = '提交链上注册';
+            }
+        });
+    }
+
+    // 创建任务
+    const submitTaskBtn = document.getElementById('submit-task');
+    if (submitTaskBtn) {
+        submitTaskBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!window.currentAccount) return showToast('请先连接钱包', 'warning');
+            const taskName = document.getElementById('task-name').value;
+            const rewardPool = document.getElementById('reward-pool').value;
+            const targetRounds = document.getElementById('target-rounds').value;
+            if (!taskName || !rewardPool || !targetRounds) {
+                showToast('请填写完整任务信息', 'error');
+                return;
+            }
+            submitTaskBtn.disabled = true;
+            submitTaskBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 部署中...';
+            try {
+                await window.simulateTransaction(`创建任务 ${taskName}`);
+                addActivity(`任务 "${taskName}" 已创建，奖池 ${rewardPool} FED`, 'Just now');
+                addTaskCard(taskName, rewardPool, targetRounds);
+                document.getElementById('task-create-form').classList.add('hidden');
+                showToast('新任务已添加到市场', 'success');
+            } finally {
+                submitTaskBtn.disabled = false;
+                submitTaskBtn.innerHTML = '部署智能合约';
+            }
+        });
+    }
+
+    // 铸造 NFT
+    const submitNftBtn = document.getElementById('submit-nft');
+    if (submitNftBtn) {
+        submitNftBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!window.currentAccount) return showToast('请先连接钱包', 'warning');
+            const nftName = document.getElementById('nft-name').value;
+            if (!nftName) {
+                showToast('请输入资产名称', 'error');
+                return;
+            }
+            submitNftBtn.disabled = true;
+            submitNftBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 铸造中...';
+            try {
+                await window.simulateTransaction(`铸造模型 NFT: ${nftName}`);
+                addActivity(`模型 NFT "${nftName}" 铸造成功`, 'Just now');
+                addNFTCard(nftName);
+                document.getElementById('nft-create-form').classList.add('hidden');
+                showToast('新 NFT 已添加到画廊', 'success');
+            } finally {
+                submitNftBtn.disabled = false;
+                submitNftBtn.innerHTML = '发起铸造';
+            }
+        });
+    }
+
+    // 登记数据集
+    const submitDatasetBtn = document.getElementById('submit-dataset');
+    if (submitDatasetBtn) {
+        submitDatasetBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!window.currentAccount) return showToast('请先连接钱包', 'warning');
+            const datasetName = document.getElementById('dataset-name').value;
+            if (!datasetName) {
+                showToast('请输入数据集名称', 'error');
+                return;
+            }
+            submitDatasetBtn.disabled = true;
+            submitDatasetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成承诺...';
+            try {
+                await window.simulateTransaction(`登记数据集: ${datasetName}`);
+                addActivity(`数据集 "${datasetName}" 已登记 Merkle 承诺`, 'Just now');
+                addDatasetCard(datasetName);
+                document.getElementById('dataset-reg-form').classList.add('hidden');
+                showToast('新数据集已添加到枢纽', 'success');
+            } finally {
+                submitDatasetBtn.disabled = false;
+                submitDatasetBtn.innerHTML = '生成 Merkle 承诺并上链';
+            }
+        });
+    }
+
+    // === 10. 静态页面中的按钮绑定 ===
+    // 节点管理静态卡片的详情和提取收益
+    const staticNodeDetailBtn = document.querySelector('#nodes-list .item-card:first-child .node-detail-btn');
+    const staticNodeWithdrawBtn = document.querySelector('#nodes-list .item-card:first-child .node-withdraw-btn');
+    if (staticNodeDetailBtn) {
+        staticNodeDetailBtn.addEventListener('click', () => {
+            showToast('主训练节点 #01 详情: 信誉98.4，累计奖励1420 FED', 'info');
+        });
+    }
+    if (staticNodeWithdrawBtn) {
+        staticNodeWithdrawBtn.addEventListener('click', async () => {
+            if (!window.currentAccount) return showToast('请先连接钱包', 'warning');
+            showToast('正在提取收益...', 'info');
+            await new Promise(r => setTimeout(r, 1000));
+            showToast('已提取 100 FED 收益', 'success');
+            addActivity('从主训练节点提取收益 100 FED', 'Just now');
+        });
+    }
+
+    // 静态任务卡片的参与训练
+    const staticJoinBtn = document.querySelector('#tasks-list .item-card:first-child .join-task-btn');
+    if (staticJoinBtn) {
+        staticJoinBtn.addEventListener('click', () => {
+            if (!window.currentAccount) return showToast('请先连接钱包', 'warning');
+            showToast('已加入任务 MNIST 隐私保护分类器，请前往训练工作台', 'success');
+            addActivity('参与任务 MNIST 隐私保护分类器', 'Just now');
+            document.querySelector('.nav-link[data-target="training"]').click();
+        });
+    }
+
+    // 静态 NFT 卡片的下载按钮
+    const staticDownloadBtn = document.querySelector('#nfts-list .item-card:first-child .download-model-btn');
+    if (staticDownloadBtn) {
+        staticDownloadBtn.addEventListener('click', () => {
+            showToast('正在从 IPFS 下载 ResNet-50 肺部诊断 v2 权重...', 'info');
+            setTimeout(() => {
+                showToast('下载链接: ipfs://QmExample/ResNet50_Lung_v2.bin (模拟)', 'success');
+                addActivity('下载模型权重 ResNet-50 肺部诊断 v2', 'Just now');
+            }, 1000);
+        });
+    }
+
+    // 静态数据集卡片的申请访问权限
+    const staticRequestBtn = document.querySelector('#datasets-list .item-card:first-child .request-access-btn');
+    if (staticRequestBtn) {
+        staticRequestBtn.addEventListener('click', () => {
+            if (!window.currentAccount) return showToast('请先连接钱包', 'warning');
+            showToast('访问申请已提交，等待数据提供者审批（链上事件）', 'info');
+            addActivity('申请 MIMIC-IV 临床数据库访问权限', 'Just now');
+            setTimeout(() => {
+                showToast('数据提供者已批准您的访问申请，访问密钥已发放', 'success');
+                addActivity('MIMIC-IV 临床数据库访问权限已批准', 'Just now');
+            }, 4000);
+        });
     }
 });

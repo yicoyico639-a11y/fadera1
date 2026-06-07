@@ -4,27 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Federa - 去中心化联邦学习激励协议</title>
+    
+    <!-- External Resources -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js" integrity="sha384-8YHIvB9nQzAwEBbzayUiLC2bcES7JyeJqHYb7twBNC/GNx8Rx9k4FKjIQCCXJNK6dU" crossorigin="anonymous"></script>
 </head>
 <body>
+    <div id="toast-container"></div>
+
     <div class="container">
+        <!-- Header & Navigation -->
         <header>
             <div class="logo">
                 <i class="fas fa-brain"></i>
-                <h1>Federa</h1>
-                <p>去中心化联邦学习激励协议</p>
+                <div>
+                    <h1>Federa</h1>
+                    <p>去中心化 AI 协作训练协议</p>
+                </div>
             </div>
             <nav>
                 <ul>
-                    <li><a href="#dashboard" class="nav-link active" data-target="dashboard"><i class="fas fa-tachometer-alt"></i> 控制台</a></li>
-                    <li><a href="#nodes" class="nav-link" data-target="nodes"><i class="fas fa-server"></i> 节点管理</a></li>
-                    <li><a href="#tasks" class="nav-link" data-target="tasks"><i class="fas fa-tasks"></i> 任务管理</a></li>
-                    <li><a href="#nfts" class="nav-link" data-target="nfts"><i class="fas fa-coins"></i> 模型NFT</a></li>
-                    <li><a href="#datasets" class="nav-link" data-target="datasets"><i class="fas fa-database"></i> 数据集</a></li>
-                    <li><a href="#training" class="nav-link" data-target="training"><i class="fas fa-graduation-cap"></i> 训练工作台</a></li>
+                    <li><a href="#" class="nav-link active" data-target="dashboard"><i class="fas fa-grid-2"></i> 控制台</a></li>
+                    <li><a href="#" class="nav-link" data-target="nodes"><i class="fas fa-server"></i> 节点管理</a></li>
+                    <li><a href="#" class="nav-link" data-target="tasks"><i class="fas fa-list-check"></i> 任务市场</a></li>
+                    <li><a href="#" class="nav-link" data-target="nfts"><i class="fas fa-hexagon-nodes"></i> 模型资产</a></li>
+                    <li><a href="#" class="nav-link" data-target="datasets"><i class="fas fa-database"></i> 数据枢纽</a></li>
+                    <li><a href="#" class="nav-link" data-target="training"><i class="fas fa-bolt"></i> 训练台</a></li>
                 </ul>
             </nav>
             <div class="wallet-info">
@@ -32,10 +40,13 @@
                     <i class="fas fa-wallet"></i> 连接钱包
                 </button>
                 <div id="wallet-status" class="hidden">
-                    <span id="account-short">0x0000...0000</span>
-                    <span id="balance">0.00 ETH</span>
-                    <button id="disconnect-wallet" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-sign-out-alt"></i>
+                    <div class="wallet-details">
+                        <span id="balance" style="color: var(--accent-primary); font-weight: 700;">0.00 ETH</span>
+                        <span style="color: var(--text-muted);">|</span>
+                        <span id="account-short" style="font-family: monospace;">0x00...000</span>
+                    </div>
+                    <button id="disconnect-wallet" class="btn btn-secondary btn-sm" style="padding: 5px 10px;">
+                        <i class="fas fa-power-off"></i>
                     </button>
                 </div>
             </div>
@@ -43,478 +54,370 @@
 
         <main>
             <!-- Dashboard Section -->
-            <section id="dashboard" class="dashboard active">
+            <section id="dashboard" class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-tachometer-alt"></i> 全球网络快照</h2>
+                </div>
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>节点总数</h3>
-                            <p class="stat-number" id="total-nodes">25</p>
-                            <p class="stat-change"><i class="fas fa-arrow-up"></i> +12% 本月</p>
-                        </div>
+                        <div class="stat-icon"><i class="fas fa-microchip"></i></div>
+                        <div class="stat-value">1,284</div>
+                        <div class="stat-label">活跃算力节点</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-project-diagram"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>任务总数</h3>
-                            <p class="stat-number" id="total-tasks">17</p>
-                            <p class="stat-change"><i class="fas fa-arrow-up"></i> +8% 本月</p>
-                        </div>
+                        <div class="stat-icon"><i class="fas fa-project-diagram"></i></div>
+                        <div class="stat-value">84</div>
+                        <div class="stat-label">运行中训练任务</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-coins"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>模型NFT</h3>
-                            <p class="stat-number" id="total-nfts">8</p>
-                            <p class="stat-change"><i class="fas fa-arrow-up"></i> +15% 本月</p>
-                        </div>
+                        <div class="stat-icon"><i class="fas fa-certificate"></i></div>
+                        <div class="stat-value">312</div>
+                        <div class="stat-label">已验证模型 NFT</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-database"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>数据集</h3>
-                            <p class="stat-number" id="total-datasets">12</p>
-                            <p class="stat-change"><i class="fas fa-arrow-up"></i> +5% 本月</p>
-                        </div>
+                        <div class="stat-icon"><i class="fas fa-database"></i></div>
+                        <div class="stat-value">1.4 PB</div>
+                        <div class="stat-label">隐私数据集规模</div>
                     </div>
                 </div>
                 
-                <div class="charts-grid">
-                    <div class="chart-card">
-                        <h3>节点分布</h3>
-                        <div class="chart-placeholder">
-                            <canvas id="nodeChart"></canvas>
-                        </div>
+                <div class="grid-layout" style="grid-template-columns: 2fr 1fr; margin-bottom: 2.5rem;">
+                    <div class="item-card">
+                        <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-chart-line"></i> 训练贡献度趋势 (Shapley Value)</h3>
+                        <div style="height: 300px;"><canvas id="activityChart"></canvas></div>
                     </div>
-                    <div class="chart-card">
-                        <h3>任务状态</h3>
-                        <div class="chart-placeholder">
-                            <canvas id="taskChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-card">
-                        <h3>活动趋势</h3>
-                        <div class="chart-placeholder">
-                            <canvas id="activityChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-card">
-                        <h3>信誉分分布</h3>
-                        <div class="chart-placeholder">
-                            <canvas id="reputationChart"></canvas>
+                    <div class="activity-card">
+                        <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-bell"></i> 实时链上事件</h3>
+                        <div id="activity-feed" class="activity-list">
+                            <div class="activity-item">
+                                <div class="activity-icon"><i class="fas fa-plus-circle"></i></div>
+                                <div class="activity-content">
+                                    <p style="font-weight: 600;">系统初始化成功</p>
+                                    <small style="color: var(--text-muted);">刚刚</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="recent-activity">
-                    <div class="section-header">
-                        <h2><i class="fas fa-history"></i> 最近活动</h2>
+
+                <div class="grid-layout">
+                    <div class="item-card">
+                        <h3><i class="fas fa-users"></i> 节点角色分布</h3>
+                        <div style="height: 250px;"><canvas id="nodeChart"></canvas></div>
                     </div>
-                    <div id="activity-feed" class="activity-list">
-                        <div class="activity-item">
-                            <div class="activity-icon">
-                                <i class="fas fa-plus-circle"></i>
-                            </div>
-                            <div class="activity-content">
-                                <p>欢迎使用Federa平台</p>
-                                <small>刚刚</small>
-                            </div>
-                        </div>
+                    <div class="item-card">
+                        <h3><i class="fas fa-tasks"></i> 任务状态分布</h3>
+                        <div style="height: 250px;"><canvas id="taskChart"></canvas></div>
+                    </div>
+                    <div class="item-card">
+                        <h3><i class="fas fa-shield-halved"></i> 网络信誉加权</h3>
+                        <div style="height: 250px;"><canvas id="reputationChart"></canvas></div>
                     </div>
                 </div>
             </section>
 
-            <!-- Nodes Management Section -->
+            <!-- Node Management -->
             <section id="nodes" class="section hidden">
                 <div class="section-header">
-                    <h2><i class="fas fa-server"></i> 节点管理</h2>
-                    <button id="register-node-btn" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> 注册节点
-                    </button>
+                    <h2><i class="fas fa-server"></i> 节点资产中心</h2>
+                    <button id="register-node-btn" class="btn btn-primary"><i class="fas fa-plus"></i> 注册新角色</button>
                 </div>
                 
-                <div class="node-registration-form hidden" id="node-reg-form">
-                    <h3>注册新节点</h3>
+                <div class="form-panel hidden" id="node-reg-form">
+                    <h3 style="margin-bottom: 1.5rem;">申请加入联邦网络</h3>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="node-type">节点类型</label>
-                            <select id="node-type" class="form-control">
-                                <option value="trainer">训练节点</option>
-                                <option value="aggregator">聚合节点</option>
-                                <option value="dataProvider">数据提供者</option>
+                            <label>角色类型</label>
+                            <select id="node-role" class="form-control">
+                                <option value="trainer">训练节点 (Trainer) - 需质押 200 FED</option>
+                                <option value="aggregator">聚合节点 (Aggregator) - 需质押 500 FED</option>
+                                <option value="dataprovider">数据提供者 (Data Provider)</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="node-stake">质押金额 (FED)</label>
-                            <input type="number" id="node-stake" class="form-control" placeholder="200" step="1" min="0">
+                            <label>质押金额 (FED)</label>
+                            <input type="number" id="stake-amount" class="form-control" placeholder="200" value="200">
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label for="node-description">节点描述</label>
-                            <textarea id="node-description" class="form-control" rows="3" placeholder="简要描述您的节点能力..."></textarea>
-                        </div>
-                    </div>
-                    <button id="submit-node-reg" class="btn btn-primary">注册节点</button>
+                    <button class="btn btn-primary" id="submit-node">提交链上注册</button>
                 </div>
                 
-                <div class="node-list" id="node-list">
-                    <h3>我的节点</h3>
-                    <div class="node-grid" id="my-nodes-grid">
-                        <!-- 节点卡片将通过JavaScript动态添加 -->
-                        <div class="node-card">
-                            <div class="node-header">
-                                <i class="fas fa-user-circle"></i>
-                                <div class="node-title">
-                                    <h4>未注册节点</h4>
-                                    <p>点击注册按钮创建您的第一个节点</p>
-                                </div>
+                <div id="nodes-list" class="grid-layout">
+                    <!-- 静态示例卡片 -->
+                    <div class="item-card">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                            <div class="stat-icon" style="margin-bottom: 0;"><i class="fas fa-microchip"></i></div>
+                            <span class="badge" style="background: var(--success); color: #fff; font-size: 0.7rem; padding: 4px 8px; border-radius: 6px;">ACTIVE</span>
+                        </div>
+                        <h4 style="font-size: 1.2rem; margin-bottom: 0.5rem;">主训练节点 #01</h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">ID: 0x7Fc...3E2a</p>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+                            <div>
+                                <small style="display: block; color: var(--text-muted);">信誉评分</small>
+                                <strong style="color: var(--accent-primary);">98.4 / 100</strong>
                             </div>
-                            <div class="node-body">
-                                <div class="node-stat">
-                                    <span class="stat-label">状态</span>
-                                    <span class="stat-value status status-pending">未激活</span>
-                                </div>
-                                <div class="node-stat">
-                                    <span class="stat-label">信誉分</span>
-                                    <span class="stat-value">0</span>
-                                </div>
-                                <div class="node-stat">
-                                    <span class="stat-label">参与轮次</span>
-                                    <span class="stat-value">0</span>
-                                </div>
+                            <div>
+                                <small style="display: block; color: var(--text-muted);">累计奖励</small>
+                                <strong>1,420 FED</strong>
                             </div>
-                            <div class="node-actions">
-                                <button class="btn btn-secondary">查看详情</button>
-                                <button class="btn btn-warning">注销</button>
-                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-secondary btn-sm" style="flex: 1;">详情</button>
+                            <button class="btn btn-secondary btn-sm" style="flex: 1;">提取收益</button>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Tasks Management Section -->
+            <!-- Task Market -->
             <section id="tasks" class="section hidden">
                 <div class="section-header">
-                    <h2><i class="fas fa-tasks"></i> 任务管理</h2>
-                    <button id="create-task-btn" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> 创建任务
-                    </button>
+                    <h2><i class="fas fa-tasks"></i> 协作训练任务市场</h2>
+                    <button id="create-task-btn" class="btn btn-primary"><i class="fas fa-plus"></i> 发布训练任务</button>
                 </div>
                 
-                <div class="task-creation-form hidden" id="task-create-form">
-                    <h3>创建新任务</h3>
+                <div class="form-panel hidden" id="task-create-form">
+                    <h3 style="margin-bottom: 1.5rem;">发布联邦学习任务</h3>
                     <div class="form-row">
-                        <div class="form-group full-width">
-                            <label for="task-name">任务名称</label>
-                            <input type="text" id="task-name" class="form-control" placeholder="输入任务名称">
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>任务名称</label>
+                            <input type="text" id="task-name" class="form-control" placeholder="例如：胸部 X 光片分类模型">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="task-reward">奖励池 (FED)</label>
-                            <input type="number" id="task-reward" class="form-control" placeholder="1000" step="1" min="0">
+                            <label>总赏金池 (FED)</label>
+                            <input type="number" id="reward-pool" class="form-control" placeholder="5000">
                         </div>
                         <div class="form-group">
-                            <label for="task-rounds">最大轮次</label>
-                            <input type="number" id="task-rounds" class="form-control" placeholder="100" min="1">
+                            <label>目标轮次</label>
+                            <input type="number" id="target-rounds" class="form-control" placeholder="100">
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="task-min-trainers">最少训练节点</label>
-                            <input type="number" id="task-min-trainers" class="form-control" placeholder="3" min="1">
-                        </div>
-                        <div class="form-group">
-                            <label for="task-max-trainers">最多训练节点</label>
-                            <input type="number" id="task-max-trainers" class="form-control" placeholder="50" min="1">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label for="task-description">任务描述</label>
-                            <textarea id="task-description" class="form-control" rows="3" placeholder="描述任务目标、数据集要求等..."></textarea>
-                        </div>
-                    </div>
-                    <button id="submit-task-create" class="btn btn-primary">创建任务</button>
+                    <button class="btn btn-primary" id="submit-task">部署智能合约</button>
                 </div>
                 
-                <div class="task-list" id="task-list">
-                    <h3>活跃任务</h3>
-                    <div class="task-grid" id="active-tasks-grid">
-                        <!-- 任务卡片将通过JavaScript动态添加 -->
-                        <div class="task-card">
-                            <div class="task-header">
-                                <i class="fas fa-project-diagram"></i>
-                                <div class="task-title">
-                                    <h4>MNIST数字识别模型</h4>
-                                    <p>使用联邦学习训练手写数字识别模型</p>
-                                </div>
+                <div id="tasks-list" class="grid-layout">
+                    <!-- 静态任务卡片 -->
+                    <div class="item-card">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                            <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: var(--accent-primary); padding: 5px 10px; border-radius: 8px;">计算机视觉</span>
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">#T-2026-004</span>
+                        </div>
+                        <h4 style="font-size: 1.25rem; margin-bottom: 0.75rem;">MNIST 隐私保护分类器</h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">基于 Federa 协议的零知识联邦训练任务，旨在提升医疗手写单识别准确率。</p>
+                        <div style="background: var(--bg-surface); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <small>训练进度</small>
+                                <small>15 / 100 轮</small>
                             </div>
-                            <div class="task-body">
-                                <div class="task-stat">
-                                    <span class="stat-label">当前轮次</span>
-                                    <span class="stat-value">15/100</span>
-                                </div>
-                                <div class="task-stat">
-                                    <span class="stat-label">参与节点</span>
-                                    <span class="stat-value">8/50</span>
-                                </div>
-                                <div class="task-stat">
-                                    <span class="stat-label">奖励池</span>
-                                    <span class="stat-value">1000 FED</span>
-                                </div>
-                                <div class="task-stat">
-                                    <span class="stat-label">状态</span>
-                                    <span class="stat-value status status-active">进行中</span>
-                                </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px;">
+                                <div style="width: 15%; height: 100%; background: var(--accent-primary); border-radius: 3px; box-shadow: 0 0 10px var(--accent-primary);"></div>
                             </div>
-                            <div class="task-actions">
-                                <button class="btn btn-secondary">查看详情</button>
-                                <button class="btn btn-success">参与训练</button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <small style="display: block; color: var(--text-muted);">奖池总额</small>
+                                <strong style="font-size: 1.1rem; color: var(--success);">8,500 FED</strong>
                             </div>
+                            <button class="btn btn-primary btn-sm join-task-btn" data-task-id="MNIST 隐私保护分类器">参与训练</button>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Training Workbench Section -->
-            <section id="training" class="section hidden">
-                <div class="section-header">
-                    <h2><i class="fas fa-graduation-cap"></i> 训练工作台</h2>
-                </div>
-                
-                <div class="training-controls">
-                    <div class="control-group">
-                        <h3>当前任务</h3>
-                        <select id="current-task" class="form-control">
-                            <option value="">选择一个任务参与</option>
-                            <option value="task1">MNIST数字识别模型</option>
-                            <option value="task2">CIFAR-10图像分类</option>
-                        </select>
-                    </div>
-                    
-                    <div class="control-group">
-                        <h3>本地训练状态</h3>
-                        <div class="status-indicator">
-                            <span class="status-dot status-idle"></span>
-                            <span>就绪</span>
-                        </div>
-                        <button id="start-training" class="btn btn-success" disabled>
-                            <i class="fas fa-play"></i> 开始训练
-                        </button>
-                    </div>
-                    
-                    <div class="control-group">
-                        <h3>ZK证明生成</h3>
-                        <div class="progress-bar">
-                            <div class="progress" id="zk-progress" style="width: 0%"></div>
-                        </div>
-                        <div class="status-text" id="zk-status">准备生成证明...</div>
-                        <button id="generate-proof" class="btn btn-primary" disabled>
-                            <i class="fas fa-certificate"></i> 生成ZK证明
-                        </button>
-                    </div>
-                    
-                    <div class="control-group">
-                        <h3>梯度提交</h3>
-                        <button id="submit-gradient" class="btn btn-warning" disabled>
-                            <i class="fas fa-paper-plane"></i> 提交梯度
-                        </button>
-                        <div class="status-text" id="gradient-status">等待梯度数据...</div>
-                    </div>
-                </div>
-                
-                <div class="training-metrics">
-                    <h3>训练指标</h3>
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <h4>准确率</h4>
-                            <p class="metric-value" id="accuracy">0%</p>
-                        </div>
-                        <div class="metric-card">
-                            <h4>损失值</h4>
-                            <p class="metric-value" id="loss">0.0000</p>
-                        </div>
-                        <div class="metric-card">
-                            <h4>贡献分</h4>
-                            <p class="metric-value" id="contribution">0.00</p>
-                        </div>
-                        <div class="metric-card">
-                            <h4>奖励</h4>
-                            <p class="metric-value" id="reward">0 FED</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- NFTs Section -->
+            <!-- NFTs & Model Lineage -->
             <section id="nfts" class="section hidden">
                 <div class="section-header">
-                    <h2><i class="fas fa-coins"></i> 模型NFT</h2>
-                    <button id="mint-nft-btn" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> 铸造NFT
-                    </button>
+                    <h2><i class="fas fa-hexagon-nodes"></i> 模型进化资产 (NFT)</h2>
+                    <button id="mint-nft-btn" class="btn btn-primary"><i class="fas fa-hammer"></i> 铸造版本 NFT</button>
                 </div>
                 
-                <div class="nft-creation-form hidden" id="nft-create-form">
-                    <h3>铸造模型NFT</h3>
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label for="nft-name">NFT名称</label>
-                            <input type="text" id="nft-name" class="form-control" placeholder="输入NFT名称">
-                        </div>
+                <div class="form-panel hidden" id="nft-create-form">
+                    <h3>将当前全局模型铸造成链上资产</h3>
+                    <div class="form-group">
+                        <label>资产名称</label>
+                        <input type="text" id="nft-name" class="form-control" placeholder="Federa MNIST v1.0">
                     </div>
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label for="nft-description">描述</label>
-                            <textarea id="nft-description" class="form-control" rows="3" placeholder="描述模型特性..."></textarea>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="nft-model-hash">模型哈希</label>
-                            <input type="text" id="nft-model-hash" class="form-control" placeholder="输入模型IPFS哈希">
-                        </div>
-                        <div class="form-group">
-                            <label for="nft-performance">性能指标</label>
-                            <input type="text" id="nft-performance" class="form-control" placeholder="如: 95.2%准确率">
-                        </div>
-                    </div>
-                    <button id="submit-nft-mint" class="btn btn-primary">铸造NFT</button>
+                    <button class="btn btn-primary" id="submit-nft">发起铸造</button>
                 </div>
-                
-                <div class="nft-collection" id="nft-collection">
-                    <h3>我的模型NFT</h3>
-                    <div class="nft-grid" id="my-nfts-grid">
-                        <!-- NFT卡片将通过JavaScript动态添加 -->
-                        <div class="nft-card">
-                            <div class="nft-image">
-                                <i class="fas fa-brain"></i>
+
+                <div id="nfts-list" class="grid-layout">
+                    <!-- 静态 NFT 卡片 -->
+                    <div class="item-card" style="padding: 0; overflow: hidden;">
+                        <div style="height: 200px; background: linear-gradient(45deg, #1e1e26, #2d2d3a); display: flex; align-items: center; justify-content: center; position: relative;">
+                            <i class="fas fa-robot" style="font-size: 5rem; color: var(--accent-primary); opacity: 0.5;"></i>
+                            <div style="position: absolute; bottom: 1rem; left: 1rem; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 6px; backdrop-filter: blur(4px);">
+                                <small>ID: #4092</small>
                             </div>
-                            <div class="nft-info">
-                                <h4>MNIST v1.5</h4>
-                                <p>手写数字识别模型</p>
-                                <div class="nft-stats">
-                                    <span>准确率: 96.8%</span>
-                                    <span>FED: 1.25</span>
+                        </div>
+                        <div style="padding: 1.5rem;">
+                            <h4 style="font-size: 1.2rem; margin-bottom: 0.5rem;">ResNet-50 肺部诊断 v2</h4>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">准确率: 96.8%</span>
+                                <span style="color: var(--success); font-weight: 700;">1.25 ETH</span>
+                            </div>
+                            <hr style="border: 0; border-top: 1px solid var(--divider); margin-bottom: 1rem;">
+                            <div style="margin-bottom: 1rem;">
+                                <small style="color: var(--text-muted); display: block; margin-bottom: 0.5rem;">版本演化 (Lineage)</small>
+                                <div style="display: flex; gap: 5px;">
+                                    <div style="width: 20px; height: 4px; background: var(--accent-primary); border-radius: 2px;"></div>
+                                    <div style="width: 20px; height: 4px; background: var(--accent-primary); border-radius: 2px;"></div>
+                                    <div style="width: 20px; height: 4px; background: var(--accent-secondary); border-radius: 2px;"></div>
+                                    <div style="width: 20px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px;"></div>
                                 </div>
                             </div>
-                            <div class="nft-actions">
-                                <button class="btn btn-secondary btn-sm">查看</button>
-                                <button class="btn btn-primary btn-sm">下载</button>
-                            </div>
+                            <button class="btn btn-secondary btn-sm" style="width: 100%;">下载模型权重 (IPFS)</button>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Datasets Section -->
+            <!-- Datasets -->
             <section id="datasets" class="section hidden">
                 <div class="section-header">
-                    <h2><i class="fas fa-database"></i> 数据集</h2>
-                    <button id="register-dataset-btn" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> 注册数据集
-                    </button>
+                    <h2><i class="fas fa-database"></i> 隐私数据枢纽</h2>
+                    <button id="register-dataset-btn" class="btn btn-primary"><i class="fas fa-link"></i> 登记数据集</button>
                 </div>
                 
-                <div class="dataset-registration-form hidden" id="dataset-reg-form">
-                    <h3>注册数据集</h3>
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label for="dataset-name">数据集名称</label>
-                            <input type="text" id="dataset-name" class="form-control" placeholder="输入数据集名称">
+                <div class="form-panel hidden" id="dataset-reg-form">
+                    <h3>登记零知识隐私数据集承诺</h3>
+                    <div class="form-group">
+                        <label>数据集名称</label>
+                        <input type="text" id="dataset-name" class="form-control" placeholder="医疗影像脱敏集">
+                    </div>
+                    <button class="btn btn-primary" id="submit-dataset">生成 Merkle 承诺并上链</button>
+                </div>
+
+                <div id="datasets-list" class="grid-layout">
+                    <!-- 静态数据集卡片 -->
+                    <div class="item-card">
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 1.5rem;">
+                            <div class="stat-icon" style="margin-bottom: 0; background: rgba(59, 130, 246, 0.1); color: var(--info);"><i class="fas fa-file-medical-alt"></i></div>
+                            <div>
+                                <h4 style="font-size: 1.1rem;">MIMIC-IV 临床数据库</h4>
+                                <small style="color: var(--text-muted);">分类: 医疗记录</small>
+                            </div>
+                        </div>
+                        <div style="background: var(--bg-surface); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <small style="color: var(--text-muted);">访问策略</small>
+                                <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: var(--info);">TEE ONLY</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <small style="color: var(--text-muted);">数据条数</small>
+                                <strong>50,000+</strong>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm request-access-btn" style="width: 100%;">申请访问权限</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Training Workbench -->
+            <section id="training" class="section hidden">
+                <div class="section-header">
+                    <h2><i class="fas fa-bolt"></i> 零知识训练工作台</h2>
+                </div>
+                
+                <div class="workbench-container">
+                    <div class="training-main">
+                        <div class="form-group">
+                            <label><i class="fas fa-bullseye"></i> 选择训练任务</label>
+                            <select id="current-task" class="form-control">
+                                <option value="">-- 请选择当前参与的任务 --</option>
+                                <option value="mnist">MNIST 隐私分类模型 (Round 15)</option>
+                            </select>
+                        </div>
+                        
+                        <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 2rem; position: relative;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                                <div>
+                                    <h3 id="zk-status" style="font-size: 1.5rem; margin-bottom: 0.5rem;">就绪</h3>
+                                    <p style="color: var(--text-muted);">本地环境: RISC Zero zkVM Detected</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span id="accuracy" style="font-size: 2rem; font-weight: 800; color: var(--accent-primary);">0.0%</span>
+                                    <small style="display: block; color: var(--text-muted);">当前准确率</small>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 2.5rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                                    <small>证明生成进度</small>
+                                    <small id="zk-progress-text">0%</small>
+                                </div>
+                                <div style="height: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; overflow: hidden;">
+                                    <div id="zk-progress" style="width: 0%; height: 100%; background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary)); transition: width 0.3s ease; box-shadow: 0 0 15px var(--accent-glow);"></div>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <button id="start-training" class="btn btn-primary" style="height: 60px; font-size: 1.1rem;" disabled><i class="fas fa-play"></i> 开始本地训练</button>
+                                <button id="generate-proof" class="btn btn-secondary" style="height: 60px; font-size: 1.1rem;" disabled><i class="fas fa-shield-halved"></i> 生成 ZK 证明</button>
+                                <button id="submit-gradient" class="btn btn-primary" style="height: 60px; font-size: 1.1rem; grid-column: span 2; background: var(--success);" disabled><i class="fas fa-cloud-upload-alt"></i> 上链提交梯度</button>
+                            </div>
+                        </div>
+
+                        <div class="activity-card">
+                            <h4 style="margin-bottom: 1rem;"><i class="fas fa-info-circle"></i> 聚合节点挑战 (Aggregator Challenge)</h4>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">若聚合节点提交了错误的结果，您可以发起挑战以罚没其质押并获取奖励。</p>
+                            <button id="challenge-aggregator" class="btn btn-secondary btn-sm" style="color: var(--danger); border-color: var(--danger);"><i class="fas fa-gavel"></i> 发起有效性挑战</button>
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label for="dataset-description">描述</label>
-                            <textarea id="dataset-description" class="form-control" rows="3" placeholder="描述数据集内容、格式、用途..."></textarea>
+
+                    <div class="training-stats">
+                        <div class="metric-card">
+                            <h4>本轮损失 (Loss)</h4>
+                            <p class="metric-value" id="loss">--</p>
+                        </div>
+                        <div class="metric-card">
+                            <h4>Shapley 贡献度</h4>
+                            <p class="metric-value" id="contribution">--</p>
+                        </div>
+                        <div class="metric-card" style="grid-column: span 2;">
+                            <h4>预估收益 (Estimated Reward)</h4>
+                            <p class="metric-value" id="reward" style="color: var(--success);">-- FED</p>
+                        </div>
+                        <div class="item-card" style="grid-column: span 2;">
+                            <h4 style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-muted);">贡献度计算说明</h4>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary);">采用 LOO (Leave-One-Out) 近似沙普利值：通过对比"有您参与"与"无您参与"时全局模型的性能提升来精确量化您的边际贡献。</p>
                         </div>
                     </div>
-                    <div class="form-row">
+                </div>
+
+                <!-- Aggregator Panel (hidden by default) -->
+                <div id="aggregator-panel" class="form-panel hidden" style="margin-top: 2rem;">
+                    <h3><i class="fas fa-layer-group"></i> 聚合节点控制台</h3>
+                    <div class="grid-layout" style="grid-template-columns: 1fr 1fr;">
                         <div class="form-group">
-                            <label for="dataset-size">数据量</label>
-                            <input type="text" id="dataset-size" class="form-control" placeholder="如: 10,000 样本">
-                        </div>
-                        <div class="form-group">
-                            <label for="dataset-format">格式</label>
-                            <input type="text" id="dataset-format" class="form-control" placeholder="如: CSV, JSON, TFRecord">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="dataset-access">访问类型</label>
-                            <select id="dataset-access" class="form-control">
-                                <option value="public">公开</option>
-                                <option value="private">私有</option>
-                                <option value="restricted">受限</option>
+                            <label>待聚合梯度列表</label>
+                            <select id="gradient-select" class="form-control" multiple size="3">
+                                <option value="0xAlice">Alice (贡献分预估 0.32)</option>
+                                <option value="0xBob">Bob (贡献分预估 0.28)</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="dataset-price">使用价格 (FED)</label>
-                            <input type="number" id="dataset-price" class="form-control" placeholder="0" step="0.01" min="0">
+                            <label>聚合算法</label>
+                            <select id="aggregation-algo" class="form-control">
+                                <option>FedAvg</option>
+                                <option>FedProx</option>
+                            </select>
                         </div>
                     </div>
-                    <button id="submit-dataset-reg" class="btn btn-primary">注册数据集</button>
-                </div>
-                
-                <div class="dataset-list" id="dataset-list">
-                    <h3>可用数据集</h3>
-                    <div class="dataset-grid" id="available-datasets-grid">
-                        <!-- 数据集卡片将通过JavaScript动态添加 -->
-                        <div class="dataset-card">
-                            <div class="dataset-header">
-                                <i class="fas fa-file-alt"></i>
-                                <div class="dataset-title">
-                                    <h4>MNIST手写数字</h4>
-                                    <p>经典的数字识别数据集</p>
-                                </div>
-                            </div>
-                            <div class="dataset-body">
-                                <div class="dataset-stat">
-                                    <span class="stat-label">数据量</span>
-                                    <span class="stat-value">70,000 样本</span>
-                                </div>
-                                <div class="dataset-stat">
-                                    <span class="stat-label">格式</span>
-                                    <span class="stat-value">PNG图像</span>
-                                </div>
-                                <div class="dataset-stat">
-                                    <span class="stat-label">访问</span>
-                                    <span class="stat-value status status-public">公开</span>
-                                </div>
-                                <div class="dataset-stat">
-                                    <span class="stat-label">价格</span>
-                                    <span class="stat-value">0 FED</span>
-                                </div>
-                            </div>
-                            <div class="dataset-actions">
-                                <button class="btn btn-secondary">详情</button>
-                                <button class="btn btn-success">使用</button>
-                            </div>
-                        </div>
-                    </div>
+                    <button id="run-aggregation" class="btn btn-primary"><i class="fas fa-cogs"></i> 执行聚合 & 计算贡献评分</button>
+                    <button id="submit-model" class="btn btn-success" style="margin-top: 1rem;" disabled><i class="fas fa-cloud-upload-alt"></i> 上链提交新模型</button>
                 </div>
             </section>
         </main>
 
-        <footer>
-            <p>&copy; 2026 Federa - 去中心化联邦学习激励协议. 保留所有权利.</p>
-            <div class="footer-links">
-                <a href="#"><i class="fab fa-github"></i> GitHub</a>
-                <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
-                <a href="#"><i class="fas fa-book"></i> 文档</a>
-                <a href="#"><i class="fas fa-envelope"></i> 联系我们</a>
+        <footer style="text-align: center; padding: 4rem 0; color: var(--text-muted);">
+            <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 1.5rem;">
+                <a href="#" style="color: var(--text-muted); text-decoration: none;"><i class="fab fa-github"></i> GitHub</a>
+                <a href="#" style="color: var(--text-muted); text-decoration: none;"><i class="fab fa-twitter"></i> Twitter</a>
+                <a href="#" style="color: var(--text-muted); text-decoration: none;"><i class="fas fa-book"></i> Documentation</a>
             </div>
+            <p>&copy; 2026 Federa Protocol. Built for the Future of Decentralized AI.</p>
         </footer>
     </div>
 
